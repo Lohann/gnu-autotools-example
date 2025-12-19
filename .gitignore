@@ -1,0 +1,30 @@
+# Fossil
+.fossil-settings/
+.fslckout
+
+# Temporary Files
+build/
+chroot-sid/
+
+# IDE
+**/.DS_Store
+.idea
+.zed
+.vscode
+
+# Tools
+**/__pycache__/
+**/node_modules
+
+# MacOS
+**/.DS_Store
+
+# GNU autotools
+example/build/
+example/autom4te.cache/
+example/tools/
+example/aclocal.m4
+example/config.h.in
+example/configure
+example/Makefile.in
+example/src/Makefile.in
