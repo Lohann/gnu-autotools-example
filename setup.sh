@@ -35,11 +35,6 @@ fi
 cd -- "$(dirname "${0}")" || abort "command 'cd -- \$(basename \"${0}\")' failed"
 pushd 'example' &> /dev/null
 
-# display step header
-display_header(){
-    echo "---------------------- $* ----------------------"
-}
-
 # display usage
 show_usage(){
     echo "usage: ${0} [-h|--help] [--cleanup]"
@@ -49,33 +44,6 @@ show_usage(){
     echo "  --execute   |  execute code"
     echo "  --cleanup   |  remove all auto-generated and build files"
     echo "  --help | -h |  show this message"
-}
-
-# check required binaries
-cleanup_autotools(){
-    test -d ./build && rm -rfv ./build
-    test -d ./autom4te.cache && rm -rfv ./autom4te.cache
-    test -d ./tools && rm -rfv ./tools
-    test -f ./aclocal.m4 && rm -fv ./aclocal.m4
-    test -f ./config.h.in && rm -fv ./config.h.in
-    test -f ./configure && rm -fv ./configure
-    test -f ./Makefile.in && rm -fv ./Makefile.in
-    test -f ./src/Makefile.in && rm -fv ./src/Makefile.in
-    return 0
-}
-
-# configure and compile
-compile(){
-    test -f ./configure || abort "configure file not found"
-    if test -d ./build; then
-        rm -rf ./build/*
-    else
-        mkdir ./build
-    fi
-    pushd 'build' &> /dev/null
-    ../configure
-    make
-    popd &> /dev/null
 }
 
 # if no args, show usage.
@@ -125,27 +93,51 @@ if test "${_do_compile}" == '1'; then
     fi
 fi
 
-# do cleanup
+###########
+# cleanup #
+###########
 if test "${_do_cleanup}" == '1'; then
-    display_header 'cleanup'
-    cleanup_autotools
+    echo "------------------------ cleanup -----------------------"
+    test -d ./build && rm -rfv ./build
+    test -d ./autom4te.cache && rm -rfv ./autom4te.cache
+    test -d ./tools && rm -rfv ./tools
+    test -f ./aclocal.m4 && rm -fv ./aclocal.m4
+    test -f ./config.h.in && rm -fv ./config.h.in
+    test -f ./configure && rm -fv ./configure
+    test -f ./Makefile.in && rm -fv ./Makefile.in
+    test -f ./src/Makefile.in && rm -fv ./src/Makefile.in
 fi
 
-# install autotools
+###################
+# setup autotools #
+###################
 if test "${_do_setup}" == '1'; then
-    display_header 'autoreconf'
+    echo "---------------------- autoreconf ----------------------"
     autoreconf --install -Wall --force --verbose
 fi
 
-# Compile
+###########
+# compile #
+###########
 if test "${_do_compile}" == '1'; then
-    display_header 'compile'
-    compile
+    echo "------------------------ compile -----------------------"
+    test -f ./configure || abort "configure file not found"
+    if test -d ./build; then
+        rm -rf ./build/*
+    else
+        mkdir ./build
+    fi
+    pushd 'build' &> /dev/null
+    ../configure
+    make
+    popd &> /dev/null
 fi
 
-# Execute
+###########
+# execute #
+###########
 if test "${_do_execute}" == '1'; then
-    display_header 'execute'
+    echo "------------------------ execute -----------------------"
     ./build/src/hello
 fi
 
