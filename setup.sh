@@ -122,11 +122,7 @@ fi
 if test "${_do_compile}" == '1'; then
     echo "------------------------ compile -----------------------"
     test -f ./configure || abort "configure file not found"
-    if test -d ./build; then
-        rm -rf ./build/*
-    else
-        mkdir ./build
-    fi
+    test -d ./build && rm -rf ./build/* || mkdir ./build
     pushd 'build' &> /dev/null
     ../configure
     make
