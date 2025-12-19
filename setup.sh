@@ -14,28 +14,33 @@ abort() {
 
 # check required binaries
 require_bin(){
-    test "$#" -eq '1' || abort "[BUG]: usage \"require_bin <bin_name>\""
-    test -z "${1}"    && abort "[BUG]: bin_name cannot be empty"
     command -v "${1}" > /dev/null 2>&1 || abort "'${1}' not found"
 }
 
 # check dependencies
 require_bin dirname
+require_bin mkdir
 require_bin make
-require_bin autoreconf
+
+# check 'autoreconf'
+if ! command -v 'autoreconf' > /dev/null 2>&1; then
+    echo "'autoreconf' not found" >&2
+    command -v 'brew' > /dev/null 2>&1 && abort "run: brew install autoconf"
+    command -v 'apt-get' > /dev/null 2>&1 && abort "run: apt-get install autoconf"
+    command -v 'dnf' > /dev/null 2>&1 && abort "run: dnf install autoconf"
+    exit 1
+fi
 
 # make sure we are in the right directory
 cd -- "$(dirname "${0}")" || abort "command 'cd -- \$(basename \"${0}\")' failed"
 pushd 'example' &> /dev/null
 
-execute_with(){
-    printf -- '---------------------- %s ----------------------\n' "${1}"
-    shift 1
-    "$@"
-    # printf -- '------------------------------------------------\n'
+# display step header
+display_header(){
+    echo "---------------------- $* ----------------------"
 }
 
-# display
+# display usage
 show_usage(){
     echo "usage: ${0} [-h|--help] [--cleanup]"
     echo "Available options: "
@@ -56,6 +61,7 @@ cleanup_autotools(){
     test -f ./configure && rm -fv ./configure
     test -f ./Makefile.in && rm -fv ./Makefile.in
     test -f ./src/Makefile.in && rm -fv ./src/Makefile.in
+    return 0
 }
 
 # configure and compile
@@ -106,28 +112,42 @@ for opt in "$@"; do
 done
 
 # if executable doesn't exists, compile it.
-if ! test -f ./build/src/hello; then
-    test "${_do_execute}" == '1' && _do_compile='1'
+if test "${_do_execute}" == '1' ; then
+    if [ ! -f ./build/src/hello ] || test "${_do_cleanup}" == '1'; then
+        _do_compile='1'
+    fi
 fi
 
-# if configure file doesn't exists, setup autotools.
-if ! test -f ./configure; then
-    if test "${_do_compile}" == '1'; then
+# if configure doesn't exists, setup autotools.
+if test "${_do_compile}" == '1'; then
+    if [ ! -f ./configure ] || test "${_do_cleanup}" == '1'; then
         _do_setup='1'
     fi
 fi
 
 # do cleanup
-test "${_do_cleanup}" == '1' && { execute_with 'cleanup' 'cleanup_autotools'; }
+if test "${_do_cleanup}" == '1'; then
+    display_header 'cleanup'
+    cleanup_autotools
+fi
 
 # install autotools
-test "${_do_setup}" == '1' && { execute_with 'autoreconf' autoreconf --install -Wall --force --verbose; }
+if test "${_do_setup}" == '1'; then
+    display_header 'autoreconf'
+    autoreconf --install -Wall --force --verbose
+fi
 
 # Compile
-test "${_do_compile}" == '1' && { execute_with 'compile' compile; }
+if test "${_do_compile}" == '1'; then
+    display_header 'compile'
+    compile
+fi
 
 # Execute
-test "${_do_execute}" == '1' && { execute_with 'execute' ./build/src/hello; } 
+if test "${_do_execute}" == '1'; then
+    display_header 'execute'
+    ./build/src/hello
+fi
 
 # ./src/configure
 # - probes the systems for required functions, libraries, and tools
